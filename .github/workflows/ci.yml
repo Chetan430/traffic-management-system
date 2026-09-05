@@ -58,7 +58,7 @@ jobs:
         run: ./test_traffic
 
       - name: Generate coverage report
-        run: gcov tests/test_traffic.c
+        run: gcov -o . tests/test_traffic.c
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
