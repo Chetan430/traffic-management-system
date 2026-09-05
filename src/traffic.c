@@ -1,86 +1,317 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#define MAX_QUEUE 100
+#define MAX_LANES 4
+#define MAX_QUEUE 50
 
-int queue[MAX_QUEUE];
-int front = 0;
-int rear = 0;
+typedef struct {
+    int id;
+    int emergency;
+} Vehicle;
 
-void enqueue(int vehicle) {
-    if (rear < MAX_QUEUE) {
-        queue[rear++] = vehicle;
-        printf("Vehicle %d added to traffic queue.\n", vehicle);
-    } else {
-        printf("Traffic queue is full.\n");
+typedef struct {
+    Vehicle vehicles[MAX_QUEUE];
+    int front;
+    int rear;
+} Queue;
+
+Queue lanes[MAX_LANES];
+
+int totalVehiclesAdded = 0;
+int totalVehiclesProcessed = 0;
+
+void initializeQueues() {
+    for (int i = 0; i < MAX_LANES; i++) {
+        lanes[i].front = 0;
+        lanes[i].rear = 0;
     }
 }
 
-int dequeue() {
-    if (front < rear) {
-        return queue[front++];
-    }
-    return -1;
+int isEmpty(int lane) {
+    return lanes[lane].front == lanes[lane].rear;
 }
 
-void displayQueue() {
-    if (front == rear) {
-        printf("Traffic queue is empty.\n");
+int isFull(int lane) {
+    return lanes[lane].rear >= MAX_QUEUE;
+}
+
+int queueSize(int lane) {
+    return lanes[lane].rear - lanes[lane].front;
+}
+
+void addVehicle(int lane, int id, int emergency) {
+    if (lane < 0 || lane >= MAX_LANES) {
+        printf("Invalid lane.\n");
         return;
     }
 
-    printf("Vehicles in queue: ");
+    if (isFull(lane)) {
+        printf("Lane %d is full.\n", lane + 1);
+        return;
+    }
 
-    for (int i = front; i < rear; i++) {
-        printf("%d ", queue[i]);
+    Vehicle vehicle;
+    vehicle.id = id;
+    vehicle.emergency = emergency;
+
+    if (emergency) {
+        int position = lanes[lane].front;
+
+        for (int i = lanes[lane].rear; i > position; i--) {
+            lanes[lane].vehicles[i] = lanes[lane].vehicles[i - 1];
+        }
+
+        lanes[lane].vehicles[position] = vehicle;
+        lanes[lane].rear++;
+    } else {
+        lanes[lane].vehicles[lanes[lane].rear++] = vehicle;
+    }
+
+    totalVehiclesAdded++;
+
+    printf("Vehicle %d added to Lane %d%s.\n",
+           id, lane + 1, emergency ? " (Emergency)" : "");
+}
+
+void processVehicle(int lane) {
+    if (lane < 0 || lane >= MAX_LANES) {
+        printf("Invalid lane.\n");
+        return;
+    }
+
+    if (isEmpty(lane)) {
+        printf("Lane %d is empty.\n", lane + 1);
+        return;
+    }
+
+    Vehicle vehicle = lanes[lane].vehicles[lanes[lane].front++];
+
+    totalVehiclesProcessed++;
+
+    printf("Vehicle %d%s processed from Lane %d.\n",
+           vehicle.id,
+           vehicle.emergency ? " (Emergency)" : "",
+           lane + 1);
+
+    if (lanes[lane].front == lanes[lane].rear) {
+        lanes[lane].front = 0;
+        lanes[lane].rear = 0;
+    }
+}
+
+void displayLane(int lane) {
+    if (lane < 0 || lane >= MAX_LANES) {
+        printf("Invalid lane.\n");
+        return;
+    }
+
+    printf("\nLane %d: ", lane + 1);
+
+    if (isEmpty(lane)) {
+        printf("Empty\n");
+        return;
+    }
+
+    for (int i = lanes[lane].front; i < lanes[lane].rear; i++) {
+        printf("%d", lanes[lane].vehicles[i].id);
+
+        if (lanes[lane].vehicles[i].emergency) {
+            printf("(E)");
+        }
+
+        if (i < lanes[lane].rear - 1) {
+            printf(" -> ");
+        }
     }
 
     printf("\n");
 }
 
+void displayAllLanes() {
+    printf("\n========== TRAFFIC QUEUES ==========\n");
+
+    for (int i = 0; i < MAX_LANES; i++) {
+        displayLane(i);
+    }
+
+    printf("====================================\n");
+}
+
+void displayDensity() {
+    printf("\n========== TRAFFIC DENSITY ==========\n");
+
+    for (int i = 0; i < MAX_LANES; i++) {
+        int count = queueSize(i);
+
+        printf("Lane %d: %d vehicles - ", i + 1, count);
+
+        if (count == 0) {
+            printf("LOW\n");
+        } else if (count <= 10) {
+            printf("MEDIUM\n");
+        } else {
+            printf("HIGH\n");
+        }
+    }
+
+    printf("=====================================\n");
+}
+
+void displayStatistics() {
+    printf("\n========== STATISTICS ==========\n");
+    printf("Total vehicles added     : %d\n", totalVehiclesAdded);
+    printf("Total vehicles processed : %d\n", totalVehiclesProcessed);
+
+    int waiting = 0;
+
+    for (int i = 0; i < MAX_LANES; i++) {
+        waiting += queueSize(i);
+    }
+
+    printf("Vehicles currently waiting: %d\n", waiting);
+    printf("================================\n");
+}
+
+void displaySignal() {
+    int signal;
+
+    printf("\nSelect traffic signal state:\n");
+    printf("1. RED\n");
+    printf("2. GREEN\n");
+    printf("Enter choice: ");
+    scanf("%d", &signal);
+
+    if (signal == 1) {
+        printf("Traffic signal: RED\n");
+        printf("Vehicles must wait.\n");
+    } else if (signal == 2) {
+        printf("Traffic signal: GREEN\n");
+        printf("Vehicles may proceed.\n");
+    } else {
+        printf("Invalid signal selection.\n");
+    }
+}
+
+void resetSimulation() {
+    initializeQueues();
+
+    totalVehiclesAdded = 0;
+    totalVehiclesProcessed = 0;
+
+    printf("Simulation has been reset successfully.\n");
+}
+
+void addVehicleMenu() {
+    int lane;
+    int id;
+    int emergency;
+
+    printf("\nEnter lane number (1-%d): ", MAX_LANES);
+    scanf("%d", &lane);
+
+    printf("Enter vehicle ID: ");
+    scanf("%d", &id);
+
+    if (id <= 0) {
+        printf("Vehicle ID must be positive.\n");
+        return;
+    }
+
+    printf("Is this an emergency vehicle? (1-Yes, 0-No): ");
+    scanf("%d", &emergency);
+
+    if (emergency != 0 && emergency != 1) {
+        printf("Invalid emergency option.\n");
+        return;
+    }
+
+    addVehicle(lane - 1, id, emergency);
+}
+
+void processVehicleMenu() {
+    int lane;
+
+    printf("\nEnter lane number to process (1-%d): ", MAX_LANES);
+    scanf("%d", &lane);
+
+    processVehicle(lane - 1);
+}
+
+void displayMenu() {
+    printf("\n");
+    printf("============================================\n");
+    printf("       TRAFFIC MANAGEMENT SYSTEM\n");
+    printf("              SIMULATION\n");
+    printf("============================================\n");
+    printf("1. Add Vehicle\n");
+    printf("2. Process Vehicle\n");
+    printf("3. Display All Queues\n");
+    printf("4. Display Traffic Density\n");
+    printf("5. Display Statistics\n");
+    printf("6. Change Traffic Signal\n");
+    printf("7. Reset Simulation\n");
+    printf("8. Exit\n");
+    printf("============================================\n");
+    printf("Enter your choice: ");
+}
+
 int main() {
     int choice;
-    int vehicle;
 
-    printf("====================================\n");
-    printf(" Traffic Management System\n");
-    printf("====================================\n");
+    initializeQueues();
+
+    printf("Traffic Management System Simulation started.\n");
 
     while (1) {
-        printf("\n1. Add Vehicle\n");
-        printf("2. Process Vehicle\n");
-        printf("3. Display Traffic Queue\n");
-        printf("4. Exit\n");
-        printf("Enter your choice: ");
-        scanf("%d", &choice);
+        displayMenu();
+
+        if (scanf("%d", &choice) != 1) {
+            printf("Invalid input. Please enter a number.\n");
+
+            while (getchar() != '\n') {
+            }
+
+            continue;
+        }
 
         switch (choice) {
             case 1:
-                printf("Enter vehicle ID: ");
-                scanf("%d", &vehicle);
-                enqueue(vehicle);
+                addVehicleMenu();
                 break;
 
             case 2:
-                vehicle = dequeue();
-
-                if (vehicle == -1) {
-                    printf("No vehicles waiting.\n");
-                } else {
-                    printf("Vehicle %d has passed through the intersection.\n",
-                           vehicle);
-                }
+                processVehicleMenu();
                 break;
 
             case 3:
-                displayQueue();
+                displayAllLanes();
                 break;
 
             case 4:
+                displayDensity();
+                break;
+
+            case 5:
+                displayStatistics();
+                break;
+
+            case 6:
+                displaySignal();
+                break;
+
+            case 7:
+                resetSimulation();
+                break;
+
+            case 8:
                 printf("Exiting Traffic Management System.\n");
                 return 0;
 
             default:
-                printf("Invalid choice. Please try again.\n");
+                printf("Invalid choice. Please select 1-8.\n");
         }
     }
+
+    return 0;
 }
