@@ -113,7 +113,7 @@ The following UML component diagram shows the main logical components of
 the Traffic Management System and their relationships.
 
 ![Traffic Management System --- UML Component
-Diagram](images/UML_TMS.png)
+Diagram](images/UML_TMS.jpg)
 
 ## 5.4 Component Descriptions
 
