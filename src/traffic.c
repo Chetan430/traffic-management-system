@@ -202,16 +202,33 @@ void resetSimulation() {
     printf("Simulation has been reset successfully.\n");
 }
 
-void addVehicleMenu() {
+
+void addVehicleMenu(void) {
     int lane;
     int id;
     int emergency;
 
     printf("\nEnter lane number (1-%d): ", MAX_LANES);
-    scanf("%d", &lane);
+    if (scanf("%d", &lane) != 1) {
+        printf("Invalid lane input. Please enter a number.\n");
+        while (getchar() != '\n' && !feof(stdin)) {
+        }
+        return;
+    }
+
+    if (lane < 1 || lane > MAX_LANES) {
+        printf("Invalid lane. Please select a lane from 1 to %d.\n",
+               MAX_LANES);
+        return;
+    }
 
     printf("Enter vehicle ID: ");
-    scanf("%d", &id);
+    if (scanf("%d", &id) != 1) {
+        printf("Invalid vehicle ID. Please enter a number.\n");
+        while (getchar() != '\n' && !feof(stdin)) {
+        }
+        return;
+    }
 
     if (id <= 0) {
         printf("Vehicle ID must be positive.\n");
@@ -219,7 +236,12 @@ void addVehicleMenu() {
     }
 
     printf("Is this an emergency vehicle? (1-Yes, 0-No): ");
-    scanf("%d", &emergency);
+    if (scanf("%d", &emergency) != 1) {
+        printf("Invalid emergency option. Please enter 1 or 0.\n");
+        while (getchar() != '\n' && !feof(stdin)) {
+        }
+        return;
+    }
 
     if (emergency != 0 && emergency != 1) {
         printf("Invalid emergency option.\n");
@@ -228,6 +250,7 @@ void addVehicleMenu() {
 
     addVehicle(lane - 1, id, emergency);
 }
+
 
 void processVehicleMenu() {
     int lane;
