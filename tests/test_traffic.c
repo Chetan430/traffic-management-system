@@ -170,6 +170,26 @@ void testQueueLimit() {
     assert(queueSize(0) == MAX_QUEUE);
 }
 
+
+void testDensityCounts() {
+    initializeQueues();
+
+    assert(queueSize(0) == 0);
+
+    addVehicle(0, 1001, 0);
+    assert(queueSize(0) == 1);
+
+    for (int i = 0; i < 9; i++) {
+        addVehicle(0, 1002 + i, 0);
+    }
+
+    assert(queueSize(0) == 10);
+
+    addVehicle(0, 2000, 0);
+    assert(queueSize(0) == 11);
+}
+
+
 int main() {
     testQueueFIFO();
     testEmergencyPriority();
@@ -177,6 +197,7 @@ int main() {
     testEmptyQueue();
     testStatistics();
     testQueueLimit();
+    testDensityCounts();
 
     printf("====================================\n");
     printf("All automated tests passed!\n");
