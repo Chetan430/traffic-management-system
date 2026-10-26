@@ -46,6 +46,15 @@ void addVehicle(int lane, int id, int emergency) {
     if (lane < 0 || lane >= MAX_LANES)
         return;
 
+    if (id <= 0)
+        return;
+
+    if (emergency != 0 && emergency != 1)
+        return;
+
+    if (isFull(lane))
+        return;
+
     if (isFull(lane))
         return;
 
@@ -170,6 +179,26 @@ void testQueueLimit() {
     assert(queueSize(0) == MAX_QUEUE);
 }
 
+void testInvalidInputs(void) {
+    initializeQueues();
+
+    /* Invalid lane numbers must not change any queue. */
+    addVehicle(-1, 101, 0);
+    addVehicle(MAX_LANES, 102, 0);
+
+    /* Invalid vehicle IDs must be rejected. */
+    addVehicle(0, 0, 0);
+    addVehicle(0, -5, 0);
+
+    /* Invalid emergency values must be rejected. */
+    addVehicle(0, 103, 5);
+    addVehicle(0, 104, -1);
+
+    assert(queueSize(0) == 0);
+    assert(queueSize(1) == 0);
+    assert(totalVehiclesAdded == 0);
+}
+
 int main() {
     testQueueFIFO();
     testEmergencyPriority();
@@ -177,6 +206,7 @@ int main() {
     testEmptyQueue();
     testStatistics();
     testQueueLimit();
+    testInvalidInputs();
 
     printf("====================================\n");
     printf("All automated tests passed!\n");
