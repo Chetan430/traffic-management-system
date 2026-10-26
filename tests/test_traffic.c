@@ -42,9 +42,29 @@ int queueSize(int lane) {
     return lanes[lane].rear - lanes[lane].front;
 }
 
+void compactQueue(int lane) {
+    if (lane < 0 || lane >= MAX_LANES) {
+        return;
+    }
+
+    int size = queueSize(lane);
+
+    if (lanes[lane].front > 0) {
+        for (int i = 0; i < size; i++) {
+            lanes[lane].vehicles[i] =
+                lanes[lane].vehicles[lanes[lane].front + i];
+        }
+
+        lanes[lane].front = 0;
+        lanes[lane].rear = size;
+    }
+}
+
 void addVehicle(int lane, int id, int emergency) {
     if (lane < 0 || lane >= MAX_LANES)
         return;
+
+    compactQueue(lane);
 
     if (isFull(lane))
         return;
@@ -171,6 +191,25 @@ void testQueueLimit() {
 }
 
 
+void testQueueCompaction(void) {
+    initializeQueues();
+
+    for (int i = 0; i < MAX_QUEUE; i++) {
+        addVehicle(0, i + 1, 0);
+    }
+
+    for (int i = 0; i < 10; i++) {
+        processVehicle(0);
+    }
+
+    addVehicle(0, 100, 0);
+
+    assert(queueSize(0) == MAX_QUEUE - 9);
+    assert(lanes[0].vehicles[lanes[0].front].id == 11);
+}
+
+
+
 void testDensityCounts() {
     initializeQueues();
 
@@ -197,6 +236,7 @@ int main() {
     testEmptyQueue();
     testStatistics();
     testQueueLimit();
+    testQueueCompaction();
     testDensityCounts();
 
     printf("====================================\n");

@@ -102,6 +102,26 @@ int queueSize(int lane) {
     return lanes[lane].rear - lanes[lane].front;
 }
 
+
+void compactQueue(int lane) {
+    if (lane < 0 || lane >= MAX_LANES) {
+        return;
+    }
+
+    int size = queueSize(lane);
+
+    if (lanes[lane].front > 0) {
+        for (int i = 0; i < size; i++) {
+            lanes[lane].vehicles[i] =
+                lanes[lane].vehicles[lanes[lane].front + i];
+        }
+
+        lanes[lane].front = 0;
+        lanes[lane].rear = size;
+    }
+}
+
+
 void addVehicle(int lane, int id, int emergency) {
     if (lane < 0 || lane >= MAX_LANES) {
         printf("Invalid lane.\n");
@@ -117,7 +137,8 @@ void addVehicle(int lane, int id, int emergency) {
         printf("Invalid emergency option. Use 1 or 0.\n");
         return;
     }
-
+    
+    compactQueue(lane);
     if (isFull(lane)) {
         printf("Lane %d is full.\n", lane + 1);
         return;
