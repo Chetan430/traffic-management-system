@@ -1,6 +1,10 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
 
 #define MAX_LANES 4
 #define MAX_QUEUE 50
@@ -21,7 +25,53 @@ Queue lanes[MAX_LANES];
 int totalVehiclesAdded = 0;
 int totalVehiclesProcessed = 0;
 
-void initializeQueues() {
+/* Safely read and validate an integer from the user.
+   Returns 1 for success, 0 for invalid input, -1 for EOF. */
+int readInteger(const char *prompt, int *value) {
+    char input[100];
+    char *end;
+    long number;
+
+    printf("%s", prompt);
+
+    if (fgets(input, sizeof(input), stdin) == NULL) {
+        return -1;
+    }
+
+    /* Reject input that exceeds the buffer length. */
+    if (strchr(input, '\n') == NULL && !feof(stdin)) {
+        int ch;
+
+        while ((ch = getchar()) != '\n' && ch != EOF) {
+        }
+
+        printf("Input is too long. Please try again.\n");
+        return 0;
+    }
+
+    errno = 0;
+    number = strtol(input, &end, 10);
+
+    if (end == input || errno == ERANGE ||
+        number < INT_MIN || number > INT_MAX) {
+        printf("Invalid input. Please enter a valid integer.\n");
+        return 0;
+    }
+
+    while (isspace((unsigned char)*end)) {
+        end++;
+    }
+
+    if (*end != '\0') {
+        printf("Invalid input. Please enter only an integer.\n");
+        return 0;
+    }
+
+    *value = (int)number;
+    return 1;
+}
+
+void initializeQueues(void) {
     for (int i = 0; i < MAX_LANES; i++) {
         lanes[i].front = 0;
         lanes[i].rear = 0;
@@ -29,20 +79,42 @@ void initializeQueues() {
 }
 
 int isEmpty(int lane) {
+    if (lane < 0 || lane >= MAX_LANES) {
+        return 1;
+    }
+
     return lanes[lane].front == lanes[lane].rear;
 }
 
 int isFull(int lane) {
+    if (lane < 0 || lane >= MAX_LANES) {
+        return 1;
+    }
+
     return lanes[lane].rear >= MAX_QUEUE;
 }
 
 int queueSize(int lane) {
+    if (lane < 0 || lane >= MAX_LANES) {
+        return 0;
+    }
+
     return lanes[lane].rear - lanes[lane].front;
 }
 
 void addVehicle(int lane, int id, int emergency) {
     if (lane < 0 || lane >= MAX_LANES) {
         printf("Invalid lane.\n");
+        return;
+    }
+
+    if (id <= 0) {
+        printf("Vehicle ID must be positive.\n");
+        return;
+    }
+
+    if (emergency != 0 && emergency != 1) {
+        printf("Invalid emergency option. Use 1 or 0.\n");
         return;
     }
 
@@ -59,7 +131,8 @@ void addVehicle(int lane, int id, int emergency) {
         int position = lanes[lane].front;
 
         for (int i = lanes[lane].rear; i > position; i--) {
-            lanes[lane].vehicles[i] = lanes[lane].vehicles[i - 1];
+            lanes[lane].vehicles[i] =
+                lanes[lane].vehicles[i - 1];
         }
 
         lanes[lane].vehicles[position] = vehicle;
@@ -128,7 +201,7 @@ void displayLane(int lane) {
     printf("\n");
 }
 
-void displayAllLanes() {
+void displayAllLanes(void) {
     printf("\n========== TRAFFIC QUEUES ==========\n");
 
     for (int i = 0; i < MAX_LANES; i++) {
@@ -138,7 +211,7 @@ void displayAllLanes() {
     printf("====================================\n");
 }
 
-void displayDensity() {
+void displayDensity(void) {
     printf("\n========== TRAFFIC DENSITY ==========\n");
 
     for (int i = 0; i < MAX_LANES; i++) {
@@ -158,10 +231,10 @@ void displayDensity() {
     printf("=====================================\n");
 }
 
-void displayStatistics() {
+void displayStatistics(void) {
     printf("\n========== STATISTICS ==========\n");
-    printf("Total vehicles added     : %d\n", totalVehiclesAdded);
-    printf("Total vehicles processed : %d\n", totalVehiclesProcessed);
+    printf("Total vehicles added      : %d\n", totalVehiclesAdded);
+    printf("Total vehicles processed  : %d\n", totalVehiclesProcessed);
 
     int waiting = 0;
 
@@ -173,14 +246,24 @@ void displayStatistics() {
     printf("================================\n");
 }
 
-void displaySignal() {
+void displaySignal(void) {
     int signal;
+    int result;
 
     printf("\nSelect traffic signal state:\n");
     printf("1. RED\n");
     printf("2. GREEN\n");
-    printf("Enter choice: ");
-    scanf("%d", &signal);
+
+    result = readInteger("Enter choice: ", &signal);
+
+    if (result == -1) {
+        printf("Input ended.\n");
+        return;
+    }
+
+    if (result == 0) {
+        return;
+    }
 
     if (signal == 1) {
         printf("Traffic signal: RED\n");
@@ -189,11 +272,11 @@ void displaySignal() {
         printf("Traffic signal: GREEN\n");
         printf("Vehicles may proceed.\n");
     } else {
-        printf("Invalid signal selection.\n");
+        printf("Invalid signal selection. Choose 1 or 2.\n");
     }
 }
 
-void resetSimulation() {
+void resetSimulation(void) {
     initializeQueues();
 
     totalVehiclesAdded = 0;
@@ -202,30 +285,31 @@ void resetSimulation() {
     printf("Simulation has been reset successfully.\n");
 }
 
-
 void addVehicleMenu(void) {
     int lane;
     int id;
     int emergency;
+    int result;
 
-    printf("\nEnter lane number (1-%d): ", MAX_LANES);
-    if (scanf("%d", &lane) != 1) {
-        printf("Invalid lane input. Please enter a number.\n");
-        while (getchar() != '\n' && !feof(stdin)) {
+    result = readInteger("\nEnter lane number (1-4): ", &lane);
+
+    if (result != 1) {
+        if (result == -1) {
+            printf("Input ended.\n");
         }
         return;
     }
 
     if (lane < 1 || lane > MAX_LANES) {
-        printf("Invalid lane. Please select a lane from 1 to %d.\n",
-               MAX_LANES);
+        printf("Invalid lane. Choose 1-%d.\n", MAX_LANES);
         return;
     }
 
-    printf("Enter vehicle ID: ");
-    if (scanf("%d", &id) != 1) {
-        printf("Invalid vehicle ID. Please enter a number.\n");
-        while (getchar() != '\n' && !feof(stdin)) {
+    result = readInteger("Enter vehicle ID: ", &id);
+
+    if (result != 1) {
+        if (result == -1) {
+            printf("Input ended.\n");
         }
         return;
     }
@@ -235,33 +319,48 @@ void addVehicleMenu(void) {
         return;
     }
 
-    printf("Is this an emergency vehicle? (1-Yes, 0-No): ");
-    if (scanf("%d", &emergency) != 1) {
-        printf("Invalid emergency option. Please enter 1 or 0.\n");
-        while (getchar() != '\n' && !feof(stdin)) {
+    result = readInteger(
+        "Is this an emergency vehicle? (1-Yes, 0-No): ",
+        &emergency
+    );
+
+    if (result != 1) {
+        if (result == -1) {
+            printf("Input ended.\n");
         }
         return;
     }
 
     if (emergency != 0 && emergency != 1) {
-        printf("Invalid emergency option.\n");
+        printf("Invalid emergency option. Enter 1 or 0.\n");
         return;
     }
 
     addVehicle(lane - 1, id, emergency);
 }
 
-
-void processVehicleMenu() {
+void processVehicleMenu(void) {
     int lane;
+    int result;
 
-    printf("\nEnter lane number to process (1-%d): ", MAX_LANES);
-    scanf("%d", &lane);
+    result = readInteger("\nEnter lane number to process (1-4): ", &lane);
+
+    if (result != 1) {
+        if (result == -1) {
+            printf("Input ended.\n");
+        }
+        return;
+    }
+
+    if (lane < 1 || lane > MAX_LANES) {
+        printf("Invalid lane. Choose 1-%d.\n", MAX_LANES);
+        return;
+    }
 
     processVehicle(lane - 1);
 }
 
-void displayMenu() {
+void displayMenu(void) {
     printf("\n");
     printf("============================================\n");
     printf("       TRAFFIC MANAGEMENT SYSTEM\n");
@@ -276,11 +375,11 @@ void displayMenu() {
     printf("7. Reset Simulation\n");
     printf("8. Exit\n");
     printf("============================================\n");
-    printf("Enter your choice: ");
 }
 
-int main() {
+int main(void) {
     int choice;
+    int result;
 
     initializeQueues();
 
@@ -289,12 +388,14 @@ int main() {
     while (1) {
         displayMenu();
 
-        if (scanf("%d", &choice) != 1) {
-            printf("Invalid input. Please enter a number.\n");
+        result = readInteger("Enter your choice: ", &choice);
 
-            while (getchar() != '\n') {
-            }
+        if (result == -1) {
+            printf("\nInput ended. Exiting simulation.\n");
+            return 0;
+        }
 
+        if (result == 0) {
             continue;
         }
 
@@ -335,6 +436,4 @@ int main() {
                 printf("Invalid choice. Please select 1-8.\n");
         }
     }
-
-    return 0;
 }
