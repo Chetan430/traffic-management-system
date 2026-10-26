@@ -1,3 +1,4 @@
+
 #include <assert.h>
 #include <stdio.h>
 
@@ -20,7 +21,7 @@ Queue lanes[MAX_LANES];
 int totalVehiclesAdded = 0;
 int totalVehiclesProcessed = 0;
 
-void initializeQueues() {
+void initializeQueues(void) {
     for (int i = 0; i < MAX_LANES; i++) {
         lanes[i].front = 0;
         lanes[i].rear = 0;
@@ -31,14 +32,26 @@ void initializeQueues() {
 }
 
 int isEmpty(int lane) {
+    if (lane < 0 || lane >= MAX_LANES) {
+        return 1;
+    }
+
     return lanes[lane].front == lanes[lane].rear;
 }
 
 int isFull(int lane) {
+    if (lane < 0 || lane >= MAX_LANES) {
+        return 1;
+    }
+
     return lanes[lane].rear >= MAX_QUEUE;
 }
 
 int queueSize(int lane) {
+    if (lane < 0 || lane >= MAX_LANES) {
+        return 0;
+    }
+
     return lanes[lane].rear - lanes[lane].front;
 }
 
@@ -61,23 +74,34 @@ void compactQueue(int lane) {
 }
 
 void addVehicle(int lane, int id, int emergency) {
-    if (lane < 0 || lane >= MAX_LANES)
+    if (lane < 0 || lane >= MAX_LANES) {
         return;
+    }
+
+    if (id <= 0) {
+        return;
+    }
+
+    if (emergency != 0 && emergency != 1) {
+        return;
+    }
 
     compactQueue(lane);
 
-    if (isFull(lane))
+    if (isFull(lane)) {
         return;
+    }
 
     Vehicle vehicle;
     vehicle.id = id;
     vehicle.emergency = emergency;
 
-    if (emergency) {
+    if (emergency == 1) {
         int position = lanes[lane].front;
 
         for (int i = lanes[lane].rear; i > position; i--) {
-            lanes[lane].vehicles[i] = lanes[lane].vehicles[i - 1];
+            lanes[lane].vehicles[i] =
+                lanes[lane].vehicles[i - 1];
         }
 
         lanes[lane].vehicles[position] = vehicle;
@@ -90,13 +114,16 @@ void addVehicle(int lane, int id, int emergency) {
 }
 
 int processVehicle(int lane) {
-    if (lane < 0 || lane >= MAX_LANES)
+    if (lane < 0 || lane >= MAX_LANES) {
         return -1;
+    }
 
-    if (isEmpty(lane))
+    if (isEmpty(lane)) {
         return -1;
+    }
 
-    Vehicle vehicle = lanes[lane].vehicles[lanes[lane].front++];
+    Vehicle vehicle =
+        lanes[lane].vehicles[lanes[lane].front++];
 
     totalVehiclesProcessed++;
 
@@ -108,7 +135,7 @@ int processVehicle(int lane) {
     return vehicle.id;
 }
 
-void testQueueFIFO() {
+void testQueueFIFO(void) {
     initializeQueues();
 
     addVehicle(0, 101, 0);
@@ -122,7 +149,7 @@ void testQueueFIFO() {
     assert(processVehicle(0) == -1);
 }
 
-void testEmergencyPriority() {
+void testEmergencyPriority(void) {
     initializeQueues();
 
     addVehicle(0, 201, 0);
@@ -134,7 +161,7 @@ void testEmergencyPriority() {
     assert(processVehicle(0) == 202);
 }
 
-void testMultipleLanes() {
+void testMultipleLanes(void) {
     initializeQueues();
 
     addVehicle(0, 101, 0);
@@ -153,7 +180,7 @@ void testMultipleLanes() {
     assert(processVehicle(3) == 401);
 }
 
-void testEmptyQueue() {
+void testEmptyQueue(void) {
     initializeQueues();
 
     assert(isEmpty(0));
@@ -161,7 +188,7 @@ void testEmptyQueue() {
     assert(processVehicle(0) == -1);
 }
 
-void testStatistics() {
+void testStatistics(void) {
     initializeQueues();
 
     addVehicle(0, 501, 0);
@@ -176,7 +203,7 @@ void testStatistics() {
     assert(totalVehiclesProcessed == 2);
 }
 
-void testQueueLimit() {
+void testQueueLimit(void) {
     initializeQueues();
 
     for (int i = 0; i < MAX_QUEUE; i++) {
@@ -188,8 +215,8 @@ void testQueueLimit() {
     addVehicle(0, 999, 0);
 
     assert(queueSize(0) == MAX_QUEUE);
+    assert(totalVehiclesAdded == MAX_QUEUE);
 }
-
 
 void testQueueCompaction(void) {
     initializeQueues();
@@ -199,18 +226,17 @@ void testQueueCompaction(void) {
     }
 
     for (int i = 0; i < 10; i++) {
-        processVehicle(0);
+        assert(processVehicle(0) == i + 1);
     }
 
     addVehicle(0, 100, 0);
 
     assert(queueSize(0) == MAX_QUEUE - 9);
     assert(lanes[0].vehicles[lanes[0].front].id == 11);
+    assert(processVehicle(0) == 11);
 }
 
-
-
-void testDensityCounts() {
+void testDensityCounts(void) {
     initializeQueues();
 
     assert(queueSize(0) == 0);
@@ -228,8 +254,45 @@ void testDensityCounts() {
     assert(queueSize(0) == 11);
 }
 
+void testInvalidInputs(void) {
+    initializeQueues();
 
-int main() {
+    /* Invalid lane numbers */
+    addVehicle(-1, 101, 0);
+    addVehicle(MAX_LANES, 102, 0);
+    assert(totalVehiclesAdded == 0);
+
+    /* Invalid vehicle IDs */
+    addVehicle(0, 0, 0);
+    addVehicle(0, -5, 0);
+    assert(queueSize(0) == 0);
+    assert(totalVehiclesAdded == 0);
+
+    /* Invalid emergency flags */
+    addVehicle(0, 103, -1);
+    addVehicle(0, 104, 2);
+    assert(queueSize(0) == 0);
+    assert(totalVehiclesAdded == 0);
+
+    /* Invalid lane operations */
+    assert(processVehicle(-1) == -1);
+    assert(processVehicle(MAX_LANES) == -1);
+    assert(queueSize(-1) == 0);
+    assert(queueSize(MAX_LANES) == 0);
+    assert(isEmpty(-1));
+    assert(isEmpty(MAX_LANES));
+    assert(isFull(-1));
+    assert(isFull(MAX_LANES));
+
+    /* Valid input still works */
+    addVehicle(0, 105, 0);
+
+    assert(queueSize(0) == 1);
+    assert(totalVehiclesAdded == 1);
+    assert(processVehicle(0) == 105);
+}
+
+int main(void) {
     testQueueFIFO();
     testEmergencyPriority();
     testMultipleLanes();
@@ -238,6 +301,7 @@ int main() {
     testQueueLimit();
     testQueueCompaction();
     testDensityCounts();
+    testInvalidInputs();
 
     printf("====================================\n");
     printf("All automated tests passed!\n");
