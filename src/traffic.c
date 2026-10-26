@@ -24,6 +24,7 @@ Queue lanes[MAX_LANES];
 
 int totalVehiclesAdded = 0;
 int totalVehiclesProcessed = 0;
+int currentSignal = 2; /* 1 = RED, 2 = GREEN */
 
 /* Safely read and validate an integer from the user.
    Returns 1 for success, 0 for invalid input, -1 for EOF. */
@@ -246,6 +247,7 @@ void displayStatistics(void) {
     printf("================================\n");
 }
 
+
 void displaySignal(void) {
     int signal;
     int result;
@@ -256,25 +258,29 @@ void displaySignal(void) {
 
     result = readInteger("Enter choice: ", &signal);
 
-    if (result == -1) {
-        printf("Input ended.\n");
+    if (result != 1) {
+        if (result == -1) {
+            printf("Input ended.\n");
+        }
         return;
     }
 
-    if (result == 0) {
+    if (signal != 1 && signal != 2) {
+        printf("Invalid signal selection. Choose 1 or 2.\n");
         return;
     }
 
-    if (signal == 1) {
+    currentSignal = signal;
+
+    if (currentSignal == 1) {
         printf("Traffic signal: RED\n");
         printf("Vehicles must wait.\n");
-    } else if (signal == 2) {
+    } else {
         printf("Traffic signal: GREEN\n");
         printf("Vehicles may proceed.\n");
-    } else {
-        printf("Invalid signal selection. Choose 1 or 2.\n");
     }
 }
+
 
 void resetSimulation(void) {
     initializeQueues();
