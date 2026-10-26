@@ -170,6 +170,24 @@ void testQueueLimit() {
     assert(queueSize(0) == MAX_QUEUE);
 }
 
+void testResetCounters(void) {
+    initializeQueues();
+
+    addVehicle(0, 701, 0);
+    addVehicle(1, 702, 0);
+    processVehicle(0);
+
+    assert(totalVehiclesAdded == 2);
+    assert(totalVehiclesProcessed == 1);
+
+    initializeQueues();
+
+    assert(totalVehiclesAdded == 0);
+    assert(totalVehiclesProcessed == 0);
+    assert(queueSize(0) == 0);
+    assert(queueSize(1) == 0);
+}
+
 int main() {
     testQueueFIFO();
     testEmergencyPriority();
@@ -177,6 +195,7 @@ int main() {
     testEmptyQueue();
     testStatistics();
     testQueueLimit();
+    testResetCounters();
 
     printf("====================================\n");
     printf("All automated tests passed!\n");
