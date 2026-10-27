@@ -521,39 +521,6 @@ Every SRS requirement is mapped to at least one test case.
   TMS-SR-004       TC-SEC-004
   TMS-SR-005       TC-SEC-005
 
-  ### 13.1 Acceptance Criteria
-
-The Traffic Management System will be considered ready for acceptance when the following criteria are verified against the approved SRS and the implemented system.
-
-| ID | Acceptance Criterion | Verification Method | Status |
-|---|---|---|---|
-| AC-01 | Vehicles can be added, displayed, and processed correctly. | Functional tests | Pending verification |
-| AC-02 | Lane selection and queue boundaries behave according to the requirements. | Boundary tests | Pending verification |
-| AC-03 | Traffic signals follow the specified behavior. | Functional tests | Pending verification |
-| AC-04 | Emergency vehicles receive the priority specified in the SRS. | Priority tests | Pending verification |
-| AC-05 | Traffic density, queue counts, and statistics are reported correctly. | Functional tests | Pending verification |
-| AC-06 | Reset restores the documented initial state, and exit terminates the program normally. | System tests | Pending verification |
-| AC-07 | Invalid inputs are handled safely without unintended operations. | Negative and validation tests | Pending verification |
-| AC-08 | The program handles empty and full queues without queue corruption or unexpected crashes. | Boundary and robustness tests | Pending verification |
-| AC-09 | All planned automated tests pass, and failures are investigated and resolved or documented. | Automated test execution | Pending verification |
-| AC-10 | Every applicable SRS requirement maps to an implementation area and at least one verification test. | Requirements traceability review | Pending verification |
-
-### 13.2 Verification Procedure
-
-1. Review each requirement ID and its wording against the approved SRS.
-2. Identify the corresponding implementation area in the source code.
-3. Execute the mapped test case and compare the actual result with the expected result.
-4. Record the test result and supporting evidence.
-5. Investigate failed tests, apply fixes where necessary, and rerun the affected tests.
-6. Update the acceptance status only after sufficient verification evidence is available.
-
-### 13.3 Verification Status and Sign-off
-
-The traceability matrix identifies the planned relationship between requirements and tests. Its presence alone does not prove that every requirement has been implemented or passed.
-
-Final acceptance requires documented test results, review of unresolved defects, and confirmation that the applicable acceptance criteria are satisfied. Any criterion not yet tested must remain marked as pending verification.
-
-
 ## 14. Test Metrics & Reporting
 
 ### Metrics Collected
