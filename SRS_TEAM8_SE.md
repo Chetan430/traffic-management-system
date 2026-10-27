@@ -6,7 +6,7 @@
 
 **Authors:** Team Number: Team 8
 
-**Instructor:** Dr. Pradeep Kumar
+**Instructor:** Dr. Pradeep  Kumar
 
 ### Team Members
 
