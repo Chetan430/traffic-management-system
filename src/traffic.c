@@ -35,16 +35,12 @@ static int readInteger(const char *prompt, int *value)
     printf("%s", prompt);
     fflush(stdout);
 
-    if (fgets(input, sizeof(input), stdin) == NULL) {
+    if (fgets(input, sizeof(input), stdin) == NULL)
         return -1;
-    }
 
     if (strchr(input, '\n') == NULL && !feof(stdin)) {
         int ch;
-
-        while ((ch = getchar()) != '\n' && ch != EOF) {
-        }
-
+        while ((ch = getchar()) != '\n' && ch != EOF) {}
         printf("Input is too long. Please try again.\n");
         return 0;
     }
@@ -58,9 +54,8 @@ static int readInteger(const char *prompt, int *value)
         return 0;
     }
 
-    while (isspace((unsigned char)*end)) {
+    while (isspace((unsigned char)*end))
         end++;
-    }
 
     if (*end != '\0') {
         printf("Invalid input. Please enter only an integer.\n");
@@ -91,7 +86,6 @@ static int isEmpty(int lane)
     if (!isValidLane(lane)) {
         return 1;
     }
-
     return lanes[lane].front == lanes[lane].rear;
 }
 
@@ -240,13 +234,11 @@ static void displayLane(int lane)
     for (i = lanes[lane].front; i < lanes[lane].rear; i++) {
         printf("%d", lanes[lane].vehicles[i].id);
 
-        if (lanes[lane].vehicles[i].emergency) {
+        if (lanes[lane].vehicles[i].emergency)
             printf("(E)");
-        }
 
-        if (i < lanes[lane].rear - 1) {
+        if (i < lanes[lane].rear - 1)
             printf(" -> ");
-        }
     }
 
     printf("\n");
@@ -278,13 +270,12 @@ static void displayDensity(void)
         printf("Lane %d: %d vehicles - ",
                i + 1, count);
 
-        if (count == 0) {
+        if (count == 0)
             printf("LOW\n");
-        } else if (count <= 10) {
+        else if (count <= 10)
             printf("MEDIUM\n");
-        } else {
+        else
             printf("HIGH\n");
-        }
     }
 
     printf("=====================================\n");
@@ -361,11 +352,8 @@ static void addVehicleMenu(void)
     int result;
 
     result = readInteger("\nEnter lane number (1-4): ", &lane);
-
     if (result != 1) {
-        if (result == -1) {
-            printf("Input ended.\n");
-        }
+        if (result == -1) printf("Input ended.\n");
         return;
     }
 
@@ -375,11 +363,8 @@ static void addVehicleMenu(void)
     }
 
     result = readInteger("Enter vehicle ID: ", &id);
-
     if (result != 1) {
-        if (result == -1) {
-            printf("Input ended.\n");
-        }
+        if (result == -1) printf("Input ended.\n");
         return;
     }
 
@@ -394,9 +379,7 @@ static void addVehicleMenu(void)
     );
 
     if (result != 1) {
-        if (result == -1) {
-            printf("Input ended.\n");
-        }
+        if (result == -1) printf("Input ended.\n");
         return;
     }
 
@@ -419,9 +402,7 @@ static void processVehicleMenu(void)
     );
 
     if (result != 1) {
-        if (result == -1) {
-            printf("Input ended.\n");
-        }
+        if (result == -1) printf("Input ended.\n");
         return;
     }
 
@@ -456,12 +437,10 @@ int main(void)
     int result;
 
     initializeQueues();
-
     printf("Traffic Management System Simulation started.\n");
 
     while (1) {
         displayMenu();
-
         result = readInteger("Enter your choice: ", &choice);
 
         if (result == -1) {
@@ -469,43 +448,34 @@ int main(void)
             return 0;
         }
 
-        if (result == 0) {
+        if (result == 0)
             continue;
-        }
 
         switch (choice) {
             case 1:
                 addVehicleMenu();
                 break;
-
             case 2:
                 processVehicleMenu();
                 break;
-
             case 3:
                 displayAllLanes();
                 break;
-
             case 4:
                 displayDensity();
                 break;
-
             case 5:
                 displayStatistics();
                 break;
-
             case 6:
                 displaySignal();
                 break;
-
             case 7:
                 resetSimulation();
                 break;
-
             case 8:
                 printf("Exiting Traffic Management System.\n");
                 return 0;
-
             default:
                 printf("Invalid choice. Please select 1-8.\n");
                 break;
