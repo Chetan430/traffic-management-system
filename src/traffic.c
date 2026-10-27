@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,26 +19,26 @@ typedef struct {
     int rear;
 } Queue;
 
-Queue lanes[MAX_LANES];
+static Queue lanes[MAX_LANES];
+static int totalVehiclesAdded = 0;
+static int totalVehiclesProcessed = 0;
+static int currentSignal = 2;
 
-int totalVehiclesAdded = 0;
-int totalVehiclesProcessed = 0;
-int currentSignal = 2; /* 1 = RED, 2 = GREEN */
-
-/* Safely read and validate an integer from the user.
-   Returns 1 for success, 0 for invalid input, -1 for EOF. */
-int readInteger(const char *prompt, int *value) {
+/* Read and validate integer input.
+   Returns 1 on success, 0 on invalid input, and -1 on EOF. */
+static int readInteger(const char *prompt, int *value)
+{
     char input[100];
     char *end;
     long number;
 
     printf("%s", prompt);
+    fflush(stdout);
 
     if (fgets(input, sizeof(input), stdin) == NULL) {
         return -1;
     }
 
-    /* Reject input that exceeds the buffer length. */
     if (strchr(input, '\n') == NULL && !feof(stdin)) {
         int ch;
 
@@ -72,39 +71,77 @@ int readInteger(const char *prompt, int *value) {
     return 1;
 }
 
-void initializeQueues(void) {
-    for (int i = 0; i < MAX_LANES; i++) {
+static void initializeQueues(void)
+{
+    int i;
+
+    for (i = 0; i < MAX_LANES; i++) {
         lanes[i].front = 0;
         lanes[i].rear = 0;
     }
 }
 
-int isEmpty(int lane) {
-    if (lane < 0 || lane >= MAX_LANES) {
+static int isValidLane(int lane)
+{
+    return lane >= 0 && lane < MAX_LANES;
+}
+
+static int isEmpty(int lane)
+{
+    if (!isValidLane(lane)) {
         return 1;
     }
 
     return lanes[lane].front == lanes[lane].rear;
 }
 
-int isFull(int lane) {
-    if (lane < 0 || lane >= MAX_LANES) {
-        return 1;
-    }
-
-    return lanes[lane].rear >= MAX_QUEUE;
-}
-
-int queueSize(int lane) {
-    if (lane < 0 || lane >= MAX_LANES) {
+static int queueSize(int lane)
+{
+    if (!isValidLane(lane)) {
         return 0;
     }
 
     return lanes[lane].rear - lanes[lane].front;
 }
 
-void addVehicle(int lane, int id, int emergency) {
-    if (lane < 0 || lane >= MAX_LANES) {
+static int isFull(int lane)
+{
+    if (!isValidLane(lane)) {
+        return 1;
+    }
+
+    return queueSize(lane) >= MAX_QUEUE;
+}
+
+/* Move waiting vehicles to the beginning of the array. */
+static void compactQueue(int lane)
+{
+    int i;
+    int size;
+
+    if (!isValidLane(lane)) {
+        return;
+    }
+
+    size = queueSize(lane);
+
+    if (lanes[lane].front > 0) {
+        for (i = 0; i < size; i++) {
+            lanes[lane].vehicles[i] =
+                lanes[lane].vehicles[lanes[lane].front + i];
+        }
+
+        lanes[lane].front = 0;
+        lanes[lane].rear = size;
+    }
+}
+
+static void addVehicle(int lane, int id, int emergency)
+{
+    Vehicle vehicle;
+    int i;
+
+    if (!isValidLane(lane)) {
         printf("Invalid lane.\n");
         return;
     }
@@ -119,38 +156,48 @@ void addVehicle(int lane, int id, int emergency) {
         return;
     }
 
+    compactQueue(lane);
+
     if (isFull(lane)) {
         printf("Lane %d is full.\n", lane + 1);
         return;
     }
 
-    Vehicle vehicle;
     vehicle.id = id;
     vehicle.emergency = emergency;
 
-    if (emergency) {
-        int position = lanes[lane].front;
-
-        for (int i = lanes[lane].rear; i > position; i--) {
+    if (emergency == 1) {
+        /* Emergency vehicles move to the front of the queue. */
+        for (i = lanes[lane].rear; i > lanes[lane].front; i--) {
             lanes[lane].vehicles[i] =
                 lanes[lane].vehicles[i - 1];
         }
 
-        lanes[lane].vehicles[position] = vehicle;
+        lanes[lane].vehicles[lanes[lane].front] = vehicle;
         lanes[lane].rear++;
     } else {
-        lanes[lane].vehicles[lanes[lane].rear++] = vehicle;
+        lanes[lane].vehicles[lanes[lane].rear] = vehicle;
+        lanes[lane].rear++;
     }
 
     totalVehiclesAdded++;
 
     printf("Vehicle %d added to Lane %d%s.\n",
-           id, lane + 1, emergency ? " (Emergency)" : "");
+           id, lane + 1,
+           emergency ? " (Emergency)" : "");
 }
 
-void processVehicle(int lane) {
-    if (lane < 0 || lane >= MAX_LANES) {
+static void processVehicle(int lane)
+{
+    Vehicle vehicle;
+
+    if (!isValidLane(lane)) {
         printf("Invalid lane.\n");
+        return;
+    }
+
+    if (currentSignal == 1) {
+        printf("Traffic signal is RED. Vehicles must wait.\n");
         return;
     }
 
@@ -159,8 +206,8 @@ void processVehicle(int lane) {
         return;
     }
 
-    Vehicle vehicle = lanes[lane].vehicles[lanes[lane].front++];
-
+    vehicle = lanes[lane].vehicles[lanes[lane].front];
+    lanes[lane].front++;
     totalVehiclesProcessed++;
 
     printf("Vehicle %d%s processed from Lane %d.\n",
@@ -174,8 +221,11 @@ void processVehicle(int lane) {
     }
 }
 
-void displayLane(int lane) {
-    if (lane < 0 || lane >= MAX_LANES) {
+static void displayLane(int lane)
+{
+    int i;
+
+    if (!isValidLane(lane)) {
         printf("Invalid lane.\n");
         return;
     }
@@ -187,7 +237,7 @@ void displayLane(int lane) {
         return;
     }
 
-    for (int i = lanes[lane].front; i < lanes[lane].rear; i++) {
+    for (i = lanes[lane].front; i < lanes[lane].rear; i++) {
         printf("%d", lanes[lane].vehicles[i].id);
 
         if (lanes[lane].vehicles[i].emergency) {
@@ -202,23 +252,31 @@ void displayLane(int lane) {
     printf("\n");
 }
 
-void displayAllLanes(void) {
+static void displayAllLanes(void)
+{
+    int i;
+
     printf("\n========== TRAFFIC QUEUES ==========\n");
 
-    for (int i = 0; i < MAX_LANES; i++) {
+    for (i = 0; i < MAX_LANES; i++) {
         displayLane(i);
     }
 
     printf("====================================\n");
 }
 
-void displayDensity(void) {
+static void displayDensity(void)
+{
+    int i;
+    int count;
+
     printf("\n========== TRAFFIC DENSITY ==========\n");
 
-    for (int i = 0; i < MAX_LANES; i++) {
-        int count = queueSize(i);
+    for (i = 0; i < MAX_LANES; i++) {
+        count = queueSize(i);
 
-        printf("Lane %d: %d vehicles - ", i + 1, count);
+        printf("Lane %d: %d vehicles - ",
+               i + 1, count);
 
         if (count == 0) {
             printf("LOW\n");
@@ -232,23 +290,27 @@ void displayDensity(void) {
     printf("=====================================\n");
 }
 
-void displayStatistics(void) {
-    printf("\n========== STATISTICS ==========\n");
-    printf("Total vehicles added      : %d\n", totalVehiclesAdded);
-    printf("Total vehicles processed  : %d\n", totalVehiclesProcessed);
-
+static void displayStatistics(void)
+{
+    int i;
     int waiting = 0;
 
-    for (int i = 0; i < MAX_LANES; i++) {
+    for (i = 0; i < MAX_LANES; i++) {
         waiting += queueSize(i);
     }
 
-    printf("Vehicles currently waiting: %d\n", waiting);
+    printf("\n========== STATISTICS ==========\n");
+    printf("Total vehicles added      : %d\n",
+           totalVehiclesAdded);
+    printf("Total vehicles processed  : %d\n",
+           totalVehiclesProcessed);
+    printf("Vehicles currently waiting: %d\n",
+           waiting);
     printf("================================\n");
 }
 
-
-void displaySignal(void) {
+static void displaySignal(void)
+{
     int signal;
     int result;
 
@@ -281,17 +343,18 @@ void displaySignal(void) {
     }
 }
 
-
-void resetSimulation(void) {
+static void resetSimulation(void)
+{
     initializeQueues();
-
     totalVehiclesAdded = 0;
     totalVehiclesProcessed = 0;
+    currentSignal = 2;
 
     printf("Simulation has been reset successfully.\n");
 }
 
-void addVehicleMenu(void) {
+static void addVehicleMenu(void)
+{
     int lane;
     int id;
     int emergency;
@@ -345,11 +408,15 @@ void addVehicleMenu(void) {
     addVehicle(lane - 1, id, emergency);
 }
 
-void processVehicleMenu(void) {
+static void processVehicleMenu(void)
+{
     int lane;
     int result;
 
-    result = readInteger("\nEnter lane number to process (1-4): ", &lane);
+    result = readInteger(
+        "\nEnter lane number to process (1-4): ",
+        &lane
+    );
 
     if (result != 1) {
         if (result == -1) {
@@ -366,9 +433,9 @@ void processVehicleMenu(void) {
     processVehicle(lane - 1);
 }
 
-void displayMenu(void) {
-    printf("\n");
-    printf("============================================\n");
+static void displayMenu(void)
+{
+    printf("\n============================================\n");
     printf("       TRAFFIC MANAGEMENT SYSTEM\n");
     printf("              SIMULATION\n");
     printf("============================================\n");
@@ -383,7 +450,8 @@ void displayMenu(void) {
     printf("============================================\n");
 }
 
-int main(void) {
+int main(void)
+{
     int choice;
     int result;
 
@@ -440,6 +508,7 @@ int main(void) {
 
             default:
                 printf("Invalid choice. Please select 1-8.\n");
+                break;
         }
     }
 }
