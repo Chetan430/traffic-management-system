@@ -236,6 +236,63 @@ void testDensityCounts(void) {
     assert(queueSize(0) == 11);
 }
 
+void testLaneCapacityIndependent(void) {
+    initializeQueues();
+
+    for (int i = 0; i < MAX_QUEUE; i++) {
+        addVehicle(0, i + 1, 0);
+    }
+
+    assert(isFull(0));
+
+    /* lane 1 is full, the other lanes must still accept vehicles */
+    addVehicle(1, 201, 0);
+    addVehicle(2, 301, 0);
+    addVehicle(3, 401, 0);
+    addVehicle(0, 999, 0);
+
+    assert(queueSize(0) == MAX_QUEUE);
+    assert(queueSize(1) == 1);
+    assert(queueSize(2) == 1);
+    assert(queueSize(3) == 1);
+}
+
+void testLanesProcessIndependently(void) {
+    initializeQueues();
+
+    addVehicle(0, 101, 0);
+    addVehicle(0, 102, 0);
+    addVehicle(1, 201, 0);
+
+    /* processing lane 1 must not change lane 2 */
+    assert(processVehicle(0) == 101);
+    assert(queueSize(0) == 1);
+    assert(queueSize(1) == 1);
+
+    assert(processVehicle(1) == 201);
+    assert(queueSize(0) == 1);
+    assert(queueSize(1) == 0);
+}
+
+void testDensityBoundariesAndDrop(void) {
+    initializeQueues();
+
+    /* boundaries used by displayDensity: 0 = LOW, 1-10 = MEDIUM, 11+ = HIGH */
+    for (int i = 0; i < 11; i++) {
+        addVehicle(2, 1000 + i, 0);
+    }
+    assert(queueSize(2) == 11);
+
+    /* density must drop when vehicles leave */
+    assert(processVehicle(2) == 1000);
+    assert(queueSize(2) == 10);
+
+    /* other lanes are not affected */
+    assert(queueSize(0) == 0);
+    assert(queueSize(1) == 0);
+    assert(queueSize(3) == 0);
+}
+
 void testInvalidInputs(void) {
     initializeQueues();
 
@@ -301,6 +358,9 @@ int main(void) {
     testQueueLimit();
     testQueueCompaction();
     testDensityCounts();
+    testLaneCapacityIndependent();
+    testLanesProcessIndependently();
+    testDensityBoundariesAndDrop();
     testInvalidInputs();
     testResetCounters();
 
