@@ -345,8 +345,30 @@ void testResetCounters(void) {
 
     assert(totalVehiclesAdded == 0);
     assert(totalVehiclesProcessed == 0);
-    assert(queueSize(0) == 0);
-    assert(queueSize(1) == 0);
+    for (int lane = 0; lane < MAX_LANES; lane++) {
+        assert(queueSize(lane) == 0);
+        assert(isEmpty(lane));
+    }
+}
+
+void testStatisticsWaitingAndRejected(void) {
+    initializeQueues();
+
+    for (int i = 0; i < MAX_QUEUE; i++) {
+        addVehicle(0, i + 1, 0);
+    }
+
+    /* 51st vehicle is rejected and must not be counted as added */
+    addVehicle(0, 999, 0);
+
+    assert(totalVehiclesAdded == MAX_QUEUE);
+    assert(queueSize(0) == MAX_QUEUE);
+
+    processVehicle(0);
+
+    assert(totalVehiclesProcessed == 1);
+    assert(queueSize(0) == MAX_QUEUE - 1);
+    assert(totalVehiclesAdded - totalVehiclesProcessed == queueSize(0));
 }
 
 int main(void) {
@@ -363,6 +385,7 @@ int main(void) {
     testDensityBoundariesAndDrop();
     testInvalidInputs();
     testResetCounters();
+    testStatisticsWaitingAndRejected();
 
     printf("====================================\n");
     printf("All automated tests passed!\n");
