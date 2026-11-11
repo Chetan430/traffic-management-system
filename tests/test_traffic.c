@@ -1,3 +1,4 @@
+
 #include <assert.h>
 #include <stdio.h>
 
@@ -19,6 +20,7 @@ Queue lanes[MAX_LANES];
 
 int totalVehiclesAdded = 0;
 int totalVehiclesProcessed = 0;
+int currentSignal = 2;  // 1 = RED, 2 = GREEN
 
 void initializeQueues(void) {
     for (int i = 0; i < MAX_LANES; i++) {
@@ -28,23 +30,27 @@ void initializeQueues(void) {
 
     totalVehiclesAdded = 0;
     totalVehiclesProcessed = 0;
+    currentSignal = 2;
 }
 
 int isEmpty(int lane) {
     if (lane < 0 || lane >= MAX_LANES)
         return 1;
+
     return lanes[lane].front == lanes[lane].rear;
 }
 
 int queueSize(int lane) {
     if (lane < 0 || lane >= MAX_LANES)
         return 0;
+
     return lanes[lane].rear - lanes[lane].front;
 }
 
 int isFull(int lane) {
     if (lane < 0 || lane >= MAX_LANES)
         return 1;
+
     return queueSize(lane) >= MAX_QUEUE;
 }
 
@@ -55,9 +61,10 @@ void compactQueue(int lane) {
     int size = queueSize(lane);
 
     if (lanes[lane].front > 0) {
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < size; i++) {
             lanes[lane].vehicles[i] =
                 lanes[lane].vehicles[lanes[lane].front + i];
+        }
 
         lanes[lane].front = 0;
         lanes[lane].rear = size;
@@ -87,7 +94,8 @@ void addVehicle(int lane, int id, int emergency) {
         int position = lanes[lane].front;
 
         for (int i = lanes[lane].rear; i > position; i--) {
-            lanes[lane].vehicles[i] = lanes[lane].vehicles[i - 1];
+            lanes[lane].vehicles[i] =
+                lanes[lane].vehicles[i - 1];
         }
 
         lanes[lane].vehicles[position] = vehicle;
@@ -101,6 +109,10 @@ void addVehicle(int lane, int id, int emergency) {
 
 int processVehicle(int lane) {
     if (lane < 0 || lane >= MAX_LANES)
+        return -1;
+
+    // Vehicles cannot move when the signal is RED.
+    if (currentSignal == 1)
         return -1;
 
     if (isEmpty(lane))
@@ -118,6 +130,7 @@ int processVehicle(int lane) {
     return vehicle.id;
 }
 
+/* Test 1: Normal vehicles follow FIFO order. */
 void testQueueFIFO(void) {
     initializeQueues();
 
@@ -132,6 +145,7 @@ void testQueueFIFO(void) {
     assert(processVehicle(0) == -1);
 }
 
+/* Test 2: Emergency vehicles receive queue priority. */
 void testEmergencyPriority(void) {
     initializeQueues();
 
@@ -144,6 +158,7 @@ void testEmergencyPriority(void) {
     assert(processVehicle(0) == 202);
 }
 
+/* Test 3: Vehicles in different lanes are independent. */
 void testMultipleLanes(void) {
     initializeQueues();
 
@@ -163,6 +178,7 @@ void testMultipleLanes(void) {
     assert(processVehicle(3) == 401);
 }
 
+/* Test 4: Empty queues cannot process vehicles. */
 void testEmptyQueue(void) {
     initializeQueues();
 
@@ -171,6 +187,7 @@ void testEmptyQueue(void) {
     assert(processVehicle(0) == -1);
 }
 
+/* Test 5: Vehicle statistics are updated correctly. */
 void testStatistics(void) {
     initializeQueues();
 
@@ -186,6 +203,7 @@ void testStatistics(void) {
     assert(totalVehiclesProcessed == 2);
 }
 
+/* Test 6: Queue capacity is limited. */
 void testQueueLimit(void) {
     initializeQueues();
 
@@ -200,6 +218,7 @@ void testQueueLimit(void) {
     assert(queueSize(0) == MAX_QUEUE);
 }
 
+/* Test 7: Queue compaction works correctly. */
 void testQueueCompaction(void) {
     initializeQueues();
 
@@ -218,6 +237,7 @@ void testQueueCompaction(void) {
     assert(processVehicle(0) == 11);
 }
 
+/* Test 8: Traffic density counts are correct. */
 void testDensityCounts(void) {
     initializeQueues();
 
@@ -236,6 +256,7 @@ void testDensityCounts(void) {
     assert(queueSize(0) == 11);
 }
 
+/* Test 9: One full lane does not block other lanes. */
 void testLaneCapacityIndependent(void) {
     initializeQueues();
 
@@ -245,7 +266,6 @@ void testLaneCapacityIndependent(void) {
 
     assert(isFull(0));
 
-    /* lane 1 is full, the other lanes must still accept vehicles */
     addVehicle(1, 201, 0);
     addVehicle(2, 301, 0);
     addVehicle(3, 401, 0);
@@ -257,6 +277,7 @@ void testLaneCapacityIndependent(void) {
     assert(queueSize(3) == 1);
 }
 
+/* Test 10: Processing one lane does not affect another. */
 void testLanesProcessIndependently(void) {
     initializeQueues();
 
@@ -264,7 +285,6 @@ void testLanesProcessIndependently(void) {
     addVehicle(0, 102, 0);
     addVehicle(1, 201, 0);
 
-    /* processing lane 1 must not change lane 2 */
     assert(processVehicle(0) == 101);
     assert(queueSize(0) == 1);
     assert(queueSize(1) == 1);
@@ -274,46 +294,42 @@ void testLanesProcessIndependently(void) {
     assert(queueSize(1) == 0);
 }
 
+/* Test 11: Density decreases when vehicles are processed. */
 void testDensityBoundariesAndDrop(void) {
     initializeQueues();
 
-    /* boundaries used by displayDensity: 0 = LOW, 1-10 = MEDIUM, 11+ = HIGH */
     for (int i = 0; i < 11; i++) {
         addVehicle(2, 1000 + i, 0);
     }
+
     assert(queueSize(2) == 11);
 
-    /* density must drop when vehicles leave */
     assert(processVehicle(2) == 1000);
     assert(queueSize(2) == 10);
 
-    /* other lanes are not affected */
     assert(queueSize(0) == 0);
     assert(queueSize(1) == 0);
     assert(queueSize(3) == 0);
 }
 
+/* Test 12: Invalid inputs are rejected. */
 void testInvalidInputs(void) {
     initializeQueues();
 
-    /* Invalid lane numbers */
     addVehicle(-1, 101, 0);
     addVehicle(MAX_LANES, 102, 0);
     assert(totalVehiclesAdded == 0);
 
-    /* Invalid vehicle IDs */
     addVehicle(0, 0, 0);
     addVehicle(0, -5, 0);
     assert(queueSize(0) == 0);
     assert(totalVehiclesAdded == 0);
 
-    /* Invalid emergency flags */
     addVehicle(0, 103, -1);
     addVehicle(0, 104, 2);
     assert(queueSize(0) == 0);
     assert(totalVehiclesAdded == 0);
 
-    /* Invalid lane operations */
     assert(processVehicle(-1) == -1);
     assert(processVehicle(MAX_LANES) == -1);
     assert(queueSize(-1) == 0);
@@ -323,7 +339,6 @@ void testInvalidInputs(void) {
     assert(isFull(-1));
     assert(isFull(MAX_LANES));
 
-    /* Valid input still works */
     addVehicle(0, 105, 0);
 
     assert(queueSize(0) == 1);
@@ -331,6 +346,7 @@ void testInvalidInputs(void) {
     assert(processVehicle(0) == 105);
 }
 
+/* Test 13: Reset clears queues and statistics. */
 void testResetCounters(void) {
     initializeQueues();
 
@@ -345,12 +361,16 @@ void testResetCounters(void) {
 
     assert(totalVehiclesAdded == 0);
     assert(totalVehiclesProcessed == 0);
+
     for (int lane = 0; lane < MAX_LANES; lane++) {
         assert(queueSize(lane) == 0);
         assert(isEmpty(lane));
     }
+
+    assert(currentSignal == 2);
 }
 
+/* Test 14: Rejected vehicles are not counted as added. */
 void testStatisticsWaitingAndRejected(void) {
     initializeQueues();
 
@@ -358,7 +378,6 @@ void testStatisticsWaitingAndRejected(void) {
         addVehicle(0, i + 1, 0);
     }
 
-    /* 51st vehicle is rejected and must not be counted as added */
     addVehicle(0, 999, 0);
 
     assert(totalVehiclesAdded == MAX_QUEUE);
@@ -369,6 +388,25 @@ void testStatisticsWaitingAndRejected(void) {
     assert(totalVehiclesProcessed == 1);
     assert(queueSize(0) == MAX_QUEUE - 1);
     assert(totalVehiclesAdded - totalVehiclesProcessed == queueSize(0));
+}
+
+/* Test 15: RED blocks processing and GREEN allows processing. */
+void testTrafficSignalControl(void) {
+    initializeQueues();
+
+    addVehicle(0, 101, 0);
+
+    currentSignal = 1;
+
+    assert(processVehicle(0) == -1);
+    assert(queueSize(0) == 1);
+    assert(totalVehiclesProcessed == 0);
+
+    currentSignal = 2;
+
+    assert(processVehicle(0) == 101);
+    assert(queueSize(0) == 0);
+    assert(totalVehiclesProcessed == 1);
 }
 
 int main(void) {
@@ -386,6 +424,7 @@ int main(void) {
     testInvalidInputs();
     testResetCounters();
     testStatisticsWaitingAndRejected();
+    testTrafficSignalControl();
 
     printf("====================================\n");
     printf("All automated tests passed!\n");
