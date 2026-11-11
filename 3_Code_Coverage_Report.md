@@ -37,7 +37,7 @@ Calls executed:65.60% of 218
 
 Screenshot of the coverage run:
 
-![gcov line coverage](screenshots/02_code_coverage.png)
+![gcov line coverage](coverage.png)
 
 ## 3. Uncovered Code
 
