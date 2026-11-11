@@ -35,7 +35,7 @@ All automated tests passed!
 
 Screenshot of the test run:
 
-![Unit test run](screenshots/01_unit_tests.png)
+![Unit test run](images/01_unit_tests.png)
 
 ## 2. Test Case Results
 
