@@ -59,54 +59,36 @@
 | Reset returns Lane 1 GREEN, others RED | Click Reset | Lane 1 GREEN, Lanes 2-4 RED | Pass |
 
 ## 4. Screenshots
+## 4. Screenshots
 
-**Initial state after reset** (Lane 1 GREEN, all counters 0)
+### 1. Initial Dashboard
+![Initial Dashboard](images/1.png)
 
-![Initial dashboard](screenshots/10_ui_initial.png)
+### 2. Add Vehicle
+![Add Vehicle](images/2.png)
 
-**Add vehicle** (TC-TMS-001, 004)
+### 3. Emergency Priority
+![Emergency Priority](images/3.png)
 
-![Add vehicle](screenshots/11_ui_add_vehicle.png)
+### 4. Process Vehicle from RED Lane
+![RED Lane Processing](images/4.png)
 
-**Emergency priority** (TC-TMS-003, 008, 009): vehicle 999 is first in Lane 3 and Lane 3 turns GREEN.
+### 5. Process Vehicle from GREEN Lane
+![GREEN Lane Processing](images/5.png)
 
-![Emergency priority](screenshots/12_ui_emergency_priority.png)
+### 6. Set Lane Signal to GREEN
+![GREEN Signal](images/6.png)
 
-**Process from a RED lane is refused**
+### 7. Set Lane Signal to RED
+![RED Signal](images/7.png)
 
-![Process RED lane](screenshots/13_ui_process_red_lane.png)
+### 8. Empty Lane and Invalid Vehicle ID
+![Empty Lane](images/8.png)
+![Invalid Vehicle ID](images/9.png)
 
-**Process from the GREEN lane** (TC-TMS-002)
-
-![Process GREEN lane](screenshots/14_ui_process_green_lane.png)
-
-**Set Lane GREEN** (TC-TMS-007)
-
-![Signal GREEN](screenshots/15_ui_signal_green.png)
-
-**Set Lane RED** (TC-TMS-007)
-
-![Signal RED](screenshots/16_ui_signal_red.png)
-
-**Empty lane** (TC-TMS-006)
-
-![Empty lane](screenshots/17_ui_empty_lane.png)
-
-**Invalid vehicle ID** (TC-TMS-014, TC-SEC-003)
-
-![Invalid ID](screenshots/18_ui_invalid_id.png)
-
-**Traffic density HIGH** (TC-TMS-010, 011)
-
-![Density](screenshots/19_ui_density_high.png)
-
-**Lane full** (TC-TMS-006, TC-SEC-002)
-
-![Lane full](screenshots/20_ui_lane_full.png)
-
-**Statistics** (TC-TMS-012)
-
-![Statistics](screenshots/21_ui_statistics.png)
+### 9. Traffic Density and Lane Full
+![High Traffic Density](images/9a.png)
+![Lane Full](images/9b.png)
 
 **Reset** (TC-TMS-013)
 
