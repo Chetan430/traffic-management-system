@@ -90,9 +90,7 @@
 ![High Traffic Density](images/9a.png)
 ![Lane Full](images/9b.png)
 
-**Reset** (TC-TMS-013)
 
-![Reset](screenshots/22_ui_reset.png)
 
 ## 5. Notes
 
